@@ -28,7 +28,9 @@ typedef int (*render_callback)(void *buf, int width, int height,
     int stride, int texture_height, int colorspace);
 
 /* The library calls this function when it has pcm samples ready for output. */
+#ifdef AUDIO
 typedef int (*audio_callback)(unsigned char *buf, int samples, int channels);
+#endif
 
 /* The library calls this function to ask whether it should quit playback.
  * Return non-zero if it's time to quit. */
@@ -41,7 +43,9 @@ typedef int (*finish_callback)(void);
 typedef struct
 {
     render_callback render_cb;
+#ifdef AUDIO
     audio_callback  audio_cb;
+#endif
     quit_callback   quit_cb;
     finish_callback finish_cb;
 } roq_callbacks_t;

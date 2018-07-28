@@ -1,0 +1,33 @@
+#
+# Makefile for Linux
+# It's mostly for conveniance and also so i don't have to recompile SDL2 each time.
+#
+
+CC = gcc
+CXX= g++
+
+OUTPUTNAME = roq_pc.elf
+
+DEFINES = -DEXECUTE_APP -DNOAUDIO -DALWAYS_16BIT
+INCLUDES = -I.
+OPT_FLAGS  = -O0 -g
+
+CFLAGS = $(DEFINES) $(INCLUDES) $(OPT_FLAGS) -std=gnu11 
+LDFLAGS = -lSDL
+
+# Redream (main engine)
+OBJS =  \
+  sdl-dreamroq.o \
+  dreamroqlib.o
+  
+.c.o:
+	$(CC) $(CFLAGS) -c -o $@ $< 
+	
+	
+all: executable
+
+executable : $(OBJS)
+	$(CC) -o $(OUTPUTNAME) $(OBJS) $(CFLAGS) $(LDFLAGS)
+
+clean:
+	rm $(OBJS) $(OUTPUTNAME)

@@ -1,3 +1,12 @@
+Alright, the now "old" RoQ player was based on idroq and could only output in 32-bits RGBA mode.
+Thus, it was very expensive for the TI-Nspire CX to decompress but it still managed to be fast despite this.
+
+So here's the newer version based on DreamRoQ : unlike idroq, it can output in RGB565 and it's done mostly well.
+It can also output sound to a file, something i thought adding to the Nspire build as well but it's disabled for now.
+
+
+==================
+
 Dreamroq Library
 
 Introduction

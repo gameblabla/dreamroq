@@ -30,7 +30,6 @@
 #define ROQ_CODEBOOK_SIZE 256
 #define SQR_ARRAY_SIZE 256
 
-#ifdef AUDIO
 struct roq_audio
 {
      int pcm_samples;
@@ -39,9 +38,6 @@ struct roq_audio
      short snd_sqr_array[SQR_ARRAY_SIZE];
      unsigned char pcm_sample[MAX_BUF_SIZE];
 } roq_audio;
-#endif
-
-int32_t framerate;
 
 typedef struct
 {
@@ -61,10 +57,8 @@ typedef struct
     unsigned short cb2x2_rgb565[ROQ_CODEBOOK_SIZE][4];
     unsigned short cb4x4_rgb565[ROQ_CODEBOOK_SIZE][16];
 
-	#ifndef ALWAYS_16B8T
     unsigned int cb2x2_rgba[ROQ_CODEBOOK_SIZE][4];
     unsigned int cb4x4_rgba[ROQ_CODEBOOK_SIZE][16];
-    #endif
 } roq_state;
 
 static int roq_unpack_quad_codebook_rgb565(unsigned char *buf, int size,
@@ -672,6 +666,7 @@ int dreamroq_play(char *filename, int colorspace, int loop,
 {
     FILE *f;
     size_t file_ret;
+    int framerate;
     int chunk_id;
     unsigned int chunk_size;
     unsigned int chunk_arg;
@@ -702,14 +697,12 @@ int dreamroq_play(char *filename, int colorspace, int loop,
     framerate = LE_16(&read_buffer[6]);
     printf("RoQ file plays at %d frames/sec\n", framerate);
     
-    #ifdef AUDIO
     /* Initialize Audio SQRT Look-Up Table */
     for(i = 0; i < 128; i++)
     {
         roq_audio.snd_sqr_array[i] = i * i;
         roq_audio.snd_sqr_array[i + 128] = -(i * i);
     }
-    #endif
 
     status = ROQ_SUCCESS;
     while (!feof(f) && status == ROQ_SUCCESS)
@@ -780,13 +773,6 @@ int dreamroq_play(char *filename, int colorspace, int loop,
                 status = ROQ_INVALID_PIC_SIZE;
                 break;
             }
-            /* Will exit if the size is not the TI-Nspire screen, i won't downscale your shit ! */
-            else if ((state.width != 320) && (state.height != 240))
-            {
-                status = ROQ_INVALID_PIC_SIZE;
-                break;
-            }
-            
             state.mb_width = state.width / 16;
             state.mb_height = state.height / 16;
             state.mb_count = state.mb_width * state.mb_height;
@@ -806,10 +792,6 @@ int dreamroq_play(char *filename, int colorspace, int loop,
                 while (state.texture_height < state.height)
                     state.texture_height <<= 1;
             }
-            
-            state.stride = 320;
-            state.texture_height = 240;
-            
             printf("  RoQ_INFO: dimensions = %dx%d, %dx%d; %d mbs, texture = %dx%d\n", 
                 state.width, state.height, state.mb_width, state.mb_height,
                 state.mb_count, state.stride, state.texture_height);
@@ -826,8 +808,8 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             state.current_frame = 0;
             if (!state.frame[0] || !state.frame[1])
             {
-                if (state.frame[0]) free (state.frame[0]);
-                if (state.frame[1]) free (state.frame[1]);
+                free (state.frame[0]);
+                free (state.frame[1]);
                 status = ROQ_NO_MEMORY;
                 break;
             }
@@ -840,28 +822,22 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             break;
 
         case RoQ_QUAD_CODEBOOK:
-			#ifdef ALWAYS_16BIT
-				status = roq_unpack_quad_codebook_rgb565(read_buffer, chunk_size, chunk_arg, &state);
-			#else
-			if (colorspace == ROQ_RGB565)
-                status = roq_unpack_quad_codebook_rgb565(read_buffer, chunk_size, chunk_arg, &state);
-			else if (colorspace == ROQ_RGBA)
+            if (colorspace == ROQ_RGB565)
+                status = roq_unpack_quad_codebook_rgb565(read_buffer, chunk_size, 
+                    chunk_arg, &state);
+            else if (colorspace == ROQ_RGBA)
                 status = roq_unpack_quad_codebook_rgba(read_buffer, chunk_size, 
                     chunk_arg, &state);
-			#endif
             break;
 
         case RoQ_QUAD_VQ:
-			#ifdef ALWAYS_16BIT
-			status = roq_unpack_vq_rgb565(read_buffer, chunk_size, chunk_arg, &state);
-			#else
             if (colorspace == ROQ_RGB565)
                 status = roq_unpack_vq_rgb565(read_buffer, chunk_size, 
                     chunk_arg, &state);
             else if (colorspace == ROQ_RGBA)
                 status = roq_unpack_vq_rgba(read_buffer, chunk_size, 
                     chunk_arg, &state);
-			#endif
+
             if (cbs->render_cb)
                 status = cbs->render_cb(state.frame[state.current_frame & 1], 
                     state.width, state.height, state.stride, state.texture_height,
@@ -874,7 +850,6 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             break;
 
         case RoQ_SOUND_MONO:
-            #ifdef AUDIO
             roq_audio.channels = 1;
             roq_audio.pcm_samples = chunk_size*2;
             snd_left = chunk_arg;
@@ -886,12 +861,10 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             }
             if (cbs->audio_cb)
                 status = cbs->audio_cb(roq_audio.pcm_sample, roq_audio.pcm_samples,
-                                   roq_audio.channels);
-			#endif
+                                   roq_audio.channels); 
             break;
 
         case RoQ_SOUND_STEREO:
-			#ifdef AUDIO
             roq_audio.channels = 2;
             roq_audio.pcm_samples = chunk_size*2;
             snd_left = (chunk_arg & 0xFF00);
@@ -908,7 +881,6 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             if (cbs->audio_cb)
                 status = cbs->audio_cb( roq_audio.pcm_sample, roq_audio.pcm_samples,
                                    roq_audio.channels );
-			#endif
             break;
 
         case RoQ_PACKET:
@@ -920,9 +892,9 @@ int dreamroq_play(char *filename, int colorspace, int loop,
         }
     }
 
-	if (state.frame[0]) free (state.frame[0]);
-	if (state.frame[1]) free (state.frame[1]);
-    if (f) fclose(f);
+    free(state.frame[0]);
+    free(state.frame[1]);
+    fclose(f);
 
     if (cbs->finish_cb)
         cbs->finish_cb();
