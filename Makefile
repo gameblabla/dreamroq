@@ -10,7 +10,7 @@ OUTPUTNAME = roq.elf
 
 DEFINES = -DALWAYS_16BIT -DAUDIO
 INCLUDES = -I.
-OPT_FLAGS  = -Os -std=gnu11 -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
+OPT_FLAGS  = -Ofast -std=gnu11 -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
 
 CFLAGS = $(DEFINES) $(INCLUDES) $(OPT_FLAGS)
 LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto

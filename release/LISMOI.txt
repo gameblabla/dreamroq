@@ -1,0 +1,48 @@
+RoQ Player v2 (maintenant basé sur DreamRoQ)
+=====================================
+v2.1 corrige un crash sur les nspire physique.
+Fait par gameblabla, le code source est ici : https://github.com/gameblabla/dreamroq.
+
+Attention : Il est bon a noter que cette nouvelle version va rejecter toute video ne faisant pas
+exactement 320x240. En cas de doute, il faut mieux reconvertir vos videos avec les commandes indiqués plus en bas.
+
+RoQ Player v2 est un lecteur de video pour la TI-Nspire pouvant jouer les fichiers RoQ,
+
+un format video qui a été d'abord introduit par "11th Guest" puis après par Quake 3 Arena.
+
+!!! VOUS AVEZ BESOIN DE NDLESS POUR LE FAIRE TOURNER SUR VOTRE TI NSPIRE !!!
+
+La qualité video est comparable au MPEG-1, et malgrés ca, un vieux processeur comme l'Intel 80486 peut le decoder.
+
+La taille peut être assez consequente mais le decodage est tres rapide.
+
+Voici les commandes ffmpeg pour convertir vos videos en RoQ :
+
+Convertir des videos
+=======================
+
+Je vous recommende chaudement d'utiliser ffmpeg au lieu des autres alternatives freeware.
+
+ffmpeg -i myvideo.avi -s 320x240 -aspect 320:240 -r 30 -an output.roq
+
+"myvideo.avi" est le fichier source. Modifier le selon le nom de votre fichier.
+
+"output.roq" est le fichier de destination. Modifier le si besoin est.
+
+"-r 30" veut dire que la video va tourner a 30 FPS. Baissez ce chiffre selon vos besoins en taille/qualité.
+
+Controles
+==========
+
+Menu
+=====
+
+CTRL = Choisir fichier
+Touchpad/Clickpad = Bouger le curseur
+
+Lecteur 
+=======
+
+ESC = Quitter le lecteur (La video se quitte d'elle meme également si il atteint la fin)
+
+
