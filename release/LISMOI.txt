@@ -1,6 +1,6 @@
 RoQ Player v2 (maintenant basé sur DreamRoQ)
 =====================================
-v2.1 corrige un crash sur les nspire physique.
+v2.2 corrige un (autre) crash sur les nspire physique.
 Fait par gameblabla, le code source est ici : https://github.com/gameblabla/dreamroq.
 
 Attention : Il est bon a noter que cette nouvelle version va rejecter toute video ne faisant pas

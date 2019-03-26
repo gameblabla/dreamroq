@@ -12,22 +12,21 @@
 extern int32_t framerate;
 SDL_Surface* screen;
 
-int quit_cb()
+int32_t quit_cb()
 {
 
 	SDL_Event event;
 	Uint8 *keystate = SDL_GetKeyState(NULL);
     SDL_PollEvent(&event);
     if (keystate[SDLK_ESCAPE]) return 1;
-    /* big, fat no-op for command line tool */
+    /* Big, fat no-op for command line tool */
     return 0;
 }
 
-int render_cb(void *buf, int width, int height, int stride,
-    int texture_height, int colorspace)
+int32_t render_cb(uint16_t buf[], int32_t width, int32_t height, int32_t stride,
+    int32_t texture_height, int32_t colorspace)
 {
-	
-    unsigned short *buf_rgb565 = (unsigned short*)buf;
+    uint16_t *buf_rgb565 = (uint16_t*)buf;
     
 	uint32_t start;
 	start = SDL_GetTicks();
@@ -38,7 +37,6 @@ int render_cb(void *buf, int width, int height, int stride,
 	memcpy(screen->pixels, buf_rgb565, (320*240)*2);
 	SDL_UnlockSurface(screen);
     SDL_Flip(screen);
-
 
     return ROQ_SUCCESS;
 }
@@ -62,13 +60,13 @@ static char wav_header[] = {
 #define WAV_HEADER_SIZE 44
 #define SAMPLE_RATE 22050
 static FILE *wav_output;
-static int data_size = 0;
-static int audio_output_initialized = 0;
+static int32_t data_size = 0;
+static int32_t audio_output_initialized = 0;
 
 
-int audio_cb(unsigned char *buf_rgb565, int samples, int channels)
+int32_t audio_cb(uint8_t *buf_rgb565, int32_t samples, int32_t channels)
 {
-    int byte_rate;
+    int32_t byte_rate;
 
     if (!audio_output_initialized)
     {
@@ -134,7 +132,7 @@ int finish_cb()
 
 int main(int argc, char *argv[])
 {
-    int status;
+    int32_t status;
     roq_callbacks_t cbs;
 
     if (argc < 2)
@@ -155,8 +153,6 @@ int main(int argc, char *argv[])
     cbs.finish_cb = finish_cb;
 
     status = dreamroq_play(argv[1], ROQ_RGB565, 0, &cbs);
-    printf("final status = %d\n", status);
-    
     if (screen) SDL_FreeSurface(screen);
 	SDL_Quit();
 

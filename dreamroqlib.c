@@ -33,51 +33,52 @@
 #ifdef AUDIO
 struct roq_audio
 {
-     int pcm_samples;
-     int channels;
-     int position;
+     int32_t pcm_samples;
+     int32_t channels;
+     int32_t position;
      short snd_sqr_array[SQR_ARRAY_SIZE];
-     unsigned char pcm_sample[MAX_BUF_SIZE];
+     uint8_t pcm_sample[MAX_BUF_SIZE];
 } roq_audio;
 #endif
 
 int32_t framerate;
 
+static uint16_t frame_contain[2][307200];
+
 typedef struct
 {
-    int width;
-    int height;
-    int mb_width;
-    int mb_height;
-    int mb_count;
-    int alpha;
+    int32_t width;
+    int32_t height;
+    int32_t mb_width;
+    int32_t mb_height;
+    int32_t mb_count;
+    int32_t alpha;
 
-    int current_frame;
-    unsigned char *frame[2];
-    int stride;
-    int texture_height;
-    int colorspace;
+    int32_t current_frame;
+    int32_t stride;
+    int32_t texture_height;
+    int32_t colorspace;
 
-    unsigned short cb2x2_rgb565[ROQ_CODEBOOK_SIZE][4];
-    unsigned short cb4x4_rgb565[ROQ_CODEBOOK_SIZE][16];
+    uint16_t cb2x2_rgb565[ROQ_CODEBOOK_SIZE][4];
+    uint16_t cb4x4_rgb565[ROQ_CODEBOOK_SIZE][16];
 
 	#ifndef ALWAYS_16B8T
-    unsigned int cb2x2_rgba[ROQ_CODEBOOK_SIZE][4];
-    unsigned int cb4x4_rgba[ROQ_CODEBOOK_SIZE][16];
+    uint32_t cb2x2_rgba[ROQ_CODEBOOK_SIZE][4];
+    uint32_t cb4x4_rgba[ROQ_CODEBOOK_SIZE][16];
     #endif
 } roq_state;
 
-static int roq_unpack_quad_codebook_rgb565(unsigned char *buf, int size,
-    int arg, roq_state *state)
+static int32_t roq_unpack_quad_codebook_rgb565(uint8_t *buf, int32_t size,
+    int32_t arg, roq_state *state)
 {
-    int y[4];
-    int yp, u, v;
-    int r, g, b;
-    int count2x2;
-    int count4x4;
-    int i, j;
-    unsigned short *v2x2;
-    unsigned short *v4x4;
+    int32_t y[4];
+    int32_t yp, u, v;
+    int32_t r, g, b;
+    int32_t count2x2;
+    int32_t count4x4;
+    int32_t i, j;
+    uint16_t *v2x2;
+    uint16_t *v4x4;
 
     count2x2 = (arg >> 8) & 0xFF;
     count4x4 =  arg       & 0xFF;
@@ -151,18 +152,18 @@ static int roq_unpack_quad_codebook_rgb565(unsigned char *buf, int size,
     return ROQ_SUCCESS;
 }
 
-static int roq_unpack_quad_codebook_rgba(unsigned char *buf, int size,
-    int arg, roq_state *state)
+static int32_t roq_unpack_quad_codebook_rgba(uint8_t *buf, int32_t size,
+    int32_t arg, roq_state *state)
 {
-    int y[4];
-    int a[4];
-    int yp, u, v;
-    int r, g, b;
-    int count2x2;
-    int count4x4;
-    int i, j;
-    unsigned int *v2x2;
-    unsigned int *v4x4;
+    int32_t y[4];
+    int32_t a[4];
+    int32_t yp, u, v;
+    int32_t r, g, b;
+    int32_t count2x2;
+    int32_t count4x4;
+    int32_t i, j;
+    uint32_t *v2x2;
+    uint32_t *v4x4;
 
     count2x2 = (arg >> 8) & 0xFF;
     count4x4 =  arg       & 0xFF;
@@ -257,61 +258,61 @@ static int roq_unpack_quad_codebook_rgba(unsigned char *buf, int size,
     mode_count -= 2; \
     mode = (mode_set >> mode_count) & 0x03;
 
-static int roq_unpack_vq_rgb565(unsigned char *buf, int size, unsigned int arg, 
+static int32_t roq_unpack_vq_rgb565(uint8_t *buf, int32_t size, uint32_t arg, 
     roq_state *state)
 {
-    int status = ROQ_SUCCESS;
-    int mb_x, mb_y;
-    int block;     /* 8x8 blocks */
-    int subblock;  /* 4x4 blocks */
-    int stride = state->stride;
-    int i;
+    int32_t status = ROQ_SUCCESS;
+    int32_t mb_x, mb_y;
+    int32_t block;     /* 8x8 blocks */
+    int32_t subblock;  /* 4x4 blocks */
+    int32_t stride = state->stride;
+    int32_t i;
 
     /* frame and pixel management */
-    unsigned short *this_frame;
-    unsigned short *last_frame;
+    uint16_t *this_frame;
+    uint16_t *last_frame;
 
-    int line_offset;
-    int mb_offset;
-    int block_offset;
-    int subblock_offset;
+    int32_t line_offset;
+    int32_t mb_offset;
+    int32_t block_offset;
+    int32_t subblock_offset;
 
-    unsigned short *this_ptr;
-    unsigned int *this_ptr32;
-    unsigned short *last_ptr;
-    unsigned short *vector16;
-    unsigned int *vector32;
-    int stride32 = stride / 2;
+    uint16_t *this_ptr;
+    uint32_t *this_ptr32;
+    uint16_t *last_ptr;
+    uint16_t *vector16;
+    uint32_t *vector32;
+    int32_t stride32 = stride / 2;
 
     /* bytestream management */
-    int index = 0;
-    int mode_set = 0;
-    int mode, mode_lo, mode_hi;
-    int mode_count = 0;
+    int32_t index = 0;
+    int32_t mode_set = 0;
+    int32_t mode, mode_lo, mode_hi;
+    int32_t mode_count = 0;
 
     /* vectors */
-    int mx, my;
-    int motion_x, motion_y;
-    unsigned char data_byte;
+    int32_t mx, my;
+    int32_t motion_x, motion_y;
+    uint8_t data_byte;
 
-    mx = (signed char)(arg >> 8);
-    my = (signed char)arg;
+    mx = (int8_t)(arg >> 8);
+    my = (int8_t)arg;
 
     if (state->current_frame & 1)
     {
-        this_frame = (unsigned short*)state->frame[1];
-        last_frame = (unsigned short*)state->frame[0];
+        this_frame = (uint16_t*)frame_contain[1];
+        last_frame = (uint16_t*)frame_contain[0];
     }
     else
     {
-        this_frame = (unsigned short*)state->frame[0];
-        last_frame = (unsigned short*)state->frame[1];
+        this_frame = (uint16_t*)frame_contain[0];
+        last_frame = (uint16_t*)frame_contain[1];
     }
     /* special case for frame 1, which needs to begin with frame 0's data */
     if (state->current_frame == 1)
     {
-        memcpy(state->frame[1], state->frame[0],
-            state->texture_height * state->stride * sizeof(unsigned short));
+        memcpy(frame_contain[1], frame_contain[0],
+            state->texture_height * state->stride * sizeof(uint16_t));
     }
 
     for (mb_y = 0; mb_y < state->mb_height && status == ROQ_SUCCESS; mb_y++)
@@ -402,8 +403,8 @@ static int roq_unpack_vq_rgb565(unsigned char *buf, int size, unsigned int arg,
 
                         case 2:  /* SLD: use 4x4 vector from codebook */
                             GET_BYTE(data_byte);
-                            vector32 = (unsigned int*)state->cb4x4_rgb565[data_byte];
-                            this_ptr32 = (unsigned int*)this_frame;
+                            vector32 = (uint32_t*)state->cb4x4_rgb565[data_byte];
+                            this_ptr32 = (uint32_t*)this_frame;
                             this_ptr32 += subblock_offset / 2;
                             for (i = 0; i < 4; i++)
                             {
@@ -464,58 +465,58 @@ static int roq_unpack_vq_rgb565(unsigned char *buf, int size, unsigned int arg,
     return status;
 }
 
-static int roq_unpack_vq_rgba(unsigned char *buf, int size, unsigned int arg, 
+static int32_t roq_unpack_vq_rgba(uint8_t *buf, int32_t size, uint32_t arg, 
     roq_state *state)
 {
-    int status = ROQ_SUCCESS;
-    int mb_x, mb_y;
-    int block;     /* 8x8 blocks */
-    int subblock;  /* 4x4 blocks */
-    int stride = state->stride;
-    int i;
+    int32_t status = ROQ_SUCCESS;
+    int32_t mb_x, mb_y;
+    int32_t block;     /* 8x8 blocks */
+    int32_t subblock;  /* 4x4 blocks */
+    int32_t stride = state->stride;
+    int32_t i;
 
     /* frame and pixel management */
-    unsigned int *this_frame;
-    unsigned int *last_frame;
+    uint32_t *this_frame;
+    uint32_t *last_frame;
 
-    int line_offset;
-    int mb_offset;
-    int block_offset;
-    int subblock_offset;
+    int32_t line_offset;
+    int32_t mb_offset;
+    int32_t block_offset;
+    int32_t subblock_offset;
 
-    unsigned int *this_ptr;
-    unsigned int *last_ptr;
-    unsigned int *vector;
+    uint32_t *this_ptr;
+    uint32_t *last_ptr;
+    uint32_t *vector;
 
     /* bytestream management */
-    int index = 0;
-    int mode_set = 0;
-    int mode, mode_lo, mode_hi;
-    int mode_count = 0;
+    int32_t index = 0;
+    int32_t mode_set = 0;
+    int32_t mode, mode_lo, mode_hi;
+    int32_t mode_count = 0;
 
     /* vectors */
-    int mx, my;
-    int motion_x, motion_y;
-    unsigned char data_byte;
+    int32_t mx, my;
+    int32_t motion_x, motion_y;
+    uint8_t data_byte;
 
-    mx = (signed char)(arg >> 8);
-    my = (signed char)arg;
+    mx = (int8_t)(arg >> 8);
+    my = (int8_t)arg;
 
     if (state->current_frame & 1)
     {
-        this_frame = (unsigned int*)state->frame[1];
-        last_frame = (unsigned int*)state->frame[0];
+        this_frame = (uint32_t*)frame_contain[1];
+        last_frame = (uint32_t*)frame_contain[0];
     }
     else
     {
-        this_frame = (unsigned int*)state->frame[0];
-        last_frame = (unsigned int*)state->frame[1];
+        this_frame = (uint32_t*)frame_contain[0];
+        last_frame = (uint32_t*)frame_contain[1];
     }
     /* special case for frame 1, which needs to begin with frame 0's data */
     if (state->current_frame == 1)
     {
-        memcpy(state->frame[1], state->frame[0],
-            state->texture_height * state->stride * sizeof(unsigned int));
+        memcpy(frame_contain[1], frame_contain[0],
+            state->texture_height * state->stride * sizeof(uint32_t));
     }
 
     for (mb_y = 0; mb_y < state->mb_height && status == ROQ_SUCCESS; mb_y++)
@@ -667,19 +668,20 @@ static int roq_unpack_vq_rgba(unsigned char *buf, int size, unsigned int arg,
     return status;
 }
 
-int dreamroq_play(char *filename, int colorspace, int loop,
+
+int32_t dreamroq_play(char *filename, int32_t colorspace, int32_t loop,
     roq_callbacks_t *cbs)
 {
     FILE *f;
     size_t file_ret;
-    int chunk_id;
-    unsigned int chunk_size;
-    unsigned int chunk_arg;
+    int32_t chunk_id;
+    uint32_t chunk_size;
+    uint32_t chunk_arg;
     roq_state state;
-    int status;
-    int initialized = 0;
-    unsigned char read_buffer[MAX_BUF_SIZE];
-    int i, snd_left, snd_right;
+    int32_t status;
+    int32_t initialized = 0;
+    uint8_t read_buffer[MAX_BUF_SIZE];
+    int32_t i, snd_left, snd_right;
 
     f = fopen(filename, "rb");
     if (!f)
@@ -689,7 +691,7 @@ int dreamroq_play(char *filename, int colorspace, int loop,
     if (file_ret != 1)
     {
         fclose(f);
-        printf("\nROQ_FILE_READ_FAILURE\n\n");
+        //printf("\nROQ_FILE_READ_FAILURE\n\n");
         return ROQ_FILE_READ_FAILURE;
     }
     chunk_id   = LE_16(&read_buffer[0]);
@@ -700,7 +702,7 @@ int dreamroq_play(char *filename, int colorspace, int loop,
         return ROQ_FILE_READ_FAILURE;
     }
     framerate = LE_16(&read_buffer[6]);
-    printf("RoQ file plays at %d frames/sec\n", framerate);
+    //printf("RoQ file plays at %d frames/sec\n", framerate);
     
     #ifdef AUDIO
     /* Initialize Audio SQRT Look-Up Table */
@@ -810,32 +812,10 @@ int dreamroq_play(char *filename, int colorspace, int loop,
             state.stride = 320;
             state.texture_height = 240;
             
-            printf("  RoQ_INFO: dimensions = %dx%d, %dx%d; %d mbs, texture = %dx%d\n", 
-                state.width, state.height, state.mb_width, state.mb_height,
-                state.mb_count, state.stride, state.texture_height);
-            if (colorspace == ROQ_RGB565)
-            {
-                state.frame[0] = (unsigned char*)malloc(state.texture_height * state.stride * sizeof(unsigned short));
-                state.frame[1] = (unsigned char*)malloc(state.texture_height * state.stride * sizeof(unsigned short));
-            }
-            else
-            {
-                state.frame[0] = (unsigned char*)malloc(state.texture_height * state.stride * sizeof(unsigned int));
-                state.frame[1] = (unsigned char*)malloc(state.texture_height * state.stride * sizeof(unsigned int));
-            }
+			// printf("RoQ_INFO: dimensions = %dx%d, %dx%d; %d mbs, texture = %dx%d\n",  state.width, state.height, state.mb_width, state.mb_height, state.mb_count, state.stride, state.texture_height);
+			// printf("Size of %d\n", state.texture_height * state.stride * sizeof(uint32_t));
             state.current_frame = 0;
-            if (!state.frame[0] || !state.frame[1])
-            {
-                if (state.frame[0]) free (state.frame[0]);
-                if (state.frame[1]) free (state.frame[1]);
-                status = ROQ_NO_MEMORY;
-                break;
-            }
-            memset(state.frame[0], 0, state.texture_height * state.stride * sizeof(unsigned short));
-            memset(state.frame[1], 0, state.texture_height * state.stride * sizeof(unsigned short));
-
-            /* set this flag so that this code is not executed again when
-             * looping */
+            /* set this flag so that this code is not executed again when looping */
             initialized = 1;
             break;
 
@@ -863,7 +843,7 @@ int dreamroq_play(char *filename, int colorspace, int loop,
                     chunk_arg, &state);
 			#endif
             if (cbs->render_cb)
-                status = cbs->render_cb(state.frame[state.current_frame & 1], 
+                status = cbs->render_cb(frame_contain[state.current_frame & 1], 
                     state.width, state.height, state.stride, state.texture_height,
                     colorspace);
 
@@ -920,8 +900,6 @@ int dreamroq_play(char *filename, int colorspace, int loop,
         }
     }
 
-	if (state.frame[0]) free (state.frame[0]);
-	if (state.frame[1]) free (state.frame[1]);
     if (f) fclose(f);
 
     if (cbs->finish_cb)

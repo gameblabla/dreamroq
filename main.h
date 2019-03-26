@@ -10,13 +10,13 @@
 
 #ifndef EXECUTE_APP
 	#define TITLE_WINDOW "Simpke File browser"
-	#define FORMAT_FILE ".tns"
+	#define FORMAT_FILE ".roq.tns"
 	#define EXECUTABLE_NAME "browser.tns"
 	#define DEFAULT_TEXT "Simple File browser"
 	#define INST_TEXT "+/- Zoom, DEL= Switch modes"
 #else
 	#define TITLE_WINDOW "RoQ Player v2.0"
-	#define FORMAT_FILE ".tns"
+	#define FORMAT_FILE ".roq.tns"
 	#define EXECUTABLE_NAME "roqplayer.tns"
 	#define DEFAULT_TEXT "Select a RoQ file"
 	#define INST_TEXT ""

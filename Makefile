@@ -8,9 +8,9 @@ CXX = nspire-g++
 
 OUTPUTNAME = roq.elf
 
-DEFINES = -DALWAYS_16BIT -DAUDIO
+DEFINES = -DALWAYS_16BIT
 INCLUDES = -I.
-OPT_FLAGS  = -Ofast -std=gnu11 -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
+OPT_FLAGS  = -Ofast -marm -fno-PIC -fno-common -std=gnu11 -fdata-sections -ffunction-sections -marm -march=armv5te+nofp -mtune=arm926ej-s+nofp -flto
 
 CFLAGS = $(DEFINES) $(INCLUDES) $(OPT_FLAGS)
 LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto
@@ -30,7 +30,7 @@ OBJS =  \
 all: executable
 
 executable : $(OBJS)
-	$(CC) -o $(OUTPUTNAME) $(OBJS) $(CFLAGS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(OUTPUTNAME) $(OBJS)  $(LDFLAGS)
 
 clean:
 	rm $(OBJS) $(OUTPUTNAME)

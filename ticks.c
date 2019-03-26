@@ -43,5 +43,5 @@ uint32_t TI_GetTicks (void)
 
 void TI_Delay (uint32_t ms)
 {
-	sleep(ms);
+	msleep(ms);
 }

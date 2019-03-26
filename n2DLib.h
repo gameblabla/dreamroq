@@ -24,19 +24,13 @@ extern void initBuffering();
 extern void updateScreen();
 extern void deinitBuffering();
 extern void clearBufferB();
-extern uint16_t getPixel(const uint16_t*, uint32_t, uint32_t);
-extern void setPixelUnsafe(uint32_t, uint32_t, uint16_t);
-extern void setPixel(uint32_t, uint32_t, uint16_t);
-extern void drawHLine(int32_t, int32_t, int32_t, uint16_t);
-extern void drawVLine(int32_t, int32_t, int32_t, uint16_t);
-extern void fillRect(int32_t, int32_t, int32_t, int32_t, uint16_t);
-extern void drawLine(int32_t, int32_t, int32_t, int32_t, uint16_t);
-extern void drawString(int32_t*, int32_t*, int32_t, const int8_t*, uint16_t, uint16_t);
-extern void drawChar(int32_t*, int32_t*, int32_t, int8_t, uint16_t, uint16_t);
-extern int32_t numberWidth(int32_t);
-extern int32_t stringWidth(const int8_t*);
+extern void drawString(int32_t *x, int32_t *y, int32_t _x, const int8_t *str, uint16_t fc, uint16_t olc);
+extern void fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c);
+extern void drawChar(int32_t *x, int32_t *y, int32_t margin, int8_t ch, uint16_t fc, uint16_t olc);
+
 #define BUFF_BYTES_SIZE (320*240*2)
 extern uint16_t BUFF_BASE_ADDRESS[BUFF_BYTES_SIZE];
+
 #ifdef __cplusplus
 }
 #endif

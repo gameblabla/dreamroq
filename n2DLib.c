@@ -15,22 +15,11 @@ uint16_t BUFF_BASE_ADDRESS[BUFF_BYTES_SIZE];
 void initBuffering()
 {
 	uint8_t init_scr;
-	
-	/*if (nobuffer == 0)
-	{
-		BUFF_BASE_ADDRESS = (uint16_t*)malloc(BUFF_BYTES_SIZE);
-		if(!BUFF_BASE_ADDRESS)
-		{
-			lcd_init(SCR_TYPE_INVALID);
-			exit(0);
-		}
-	}*/
-	
+
 	init_scr = lcd_init(SCR_320x240_565);
 	if (init_scr == 0)
 	{
 		lcd_init(SCR_TYPE_INVALID);
-		//exit(0);
 	}
 }
 
@@ -41,7 +30,6 @@ void updateScreen()
 
 void deinitBuffering()
 {
-	//if (BUFF_BASE_ADDRESS) free(BUFF_BASE_ADDRESS);
 	lcd_init(SCR_TYPE_INVALID);
 }
 
@@ -57,13 +45,13 @@ void clearBufferB()
 }
 
 
-inline void setPixelUnsafe(uint32_t x, uint32_t y, uint16_t c)
+static inline void setPixelUnsafe(uint32_t x, uint32_t y, uint16_t c)
 {
 	*((uint16_t*)BUFF_BASE_ADDRESS + x + y * 320) = c;
 }
 
 
-inline void setPixel(uint32_t x, uint32_t y, uint16_t c)
+static inline void setPixel(uint32_t x, uint32_t y, uint16_t c)
 {
 	if(x < 320 && y < 240)
 		*((uint16_t*)BUFF_BASE_ADDRESS + x + y * 320) = c;

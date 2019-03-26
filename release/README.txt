@@ -1,12 +1,11 @@
-RoQ Player v2.1 (now based on DreamRoQ)
+RoQ Player v2.2 (now based on DreamRoQ)
 =====================================
 
-v2.1 fixes a crash on real hardware
+v2.2 fixes (yet) another crash on real hardware. For Good (it doesn't like memset it seems)
 Done by gameblabla, source code is at https://github.com/gameblabla/dreamroq.
 
 Warning : It's worth noting that this version will reject any video files that are not exactly 320x240.
 In doubt, reconvert them with the command shown below.
-
 
 RoQ Player is a video player for the TI-Nspire that can playback RoQ type files,
 

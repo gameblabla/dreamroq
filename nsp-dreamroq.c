@@ -12,17 +12,17 @@
 
 extern uint32_t framerate;
 
-int quit_cb()
+int32_t quit_cb()
 {
 	if (isKeyPressed(KEY_NSPIRE_ESC)) return 1;
     return 0;
 }
 
-int render_cb(void *buf, int width, int height, int stride,
-    int texture_height, int colorspace)
+int render_cb(uint16_t buf[], int32_t width, int32_t height, int32_t stride,
+    int32_t texture_height, int32_t colorspace)
 {
 	
-	unsigned short *buf_rgb565 = (unsigned short*)buf;
+	uint16_t *buf_rgb565 = (uint16_t*)buf;
 	uint32_t start;
 	start = TI_GetTicks();
 	if((1000/framerate) > TI_GetTicks()-start) TI_Delay((1000/framerate)-(TI_GetTicks()-start));
@@ -94,7 +94,7 @@ int audio_cb(unsigned char *buf_rgb565, int samples, int channels)
 }
 #endif
 
-int finish_cb()
+int32_t finish_cb()
 {
 	#ifdef AUDIO
 	if (audio_output_initialized)
@@ -123,7 +123,7 @@ int finish_cb()
 
 int dreamroq(char* filename)
 {
-    int status;
+    int32_t status;
     roq_callbacks_t cbs;
     
 	TI_StartTicks();
@@ -137,12 +137,8 @@ int dreamroq(char* filename)
     cbs.finish_cb = finish_cb;
 
     status = dreamroq_play(filename, ROQ_RGB565, 0, &cbs);
-    printf("Final status = %d\n", status);
-    
     deinitBuffering();
 
 	return 0;
-	/* No need to return status, we're going back to my file browser */
-    //return status;
 }
 
