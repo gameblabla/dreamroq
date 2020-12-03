@@ -13,7 +13,7 @@ INCLUDES = -I.
 OPT_FLAGS  = -Ofast -marm -fno-PIC -fno-common -std=gnu11 -fdata-sections -ffunction-sections -marm -march=armv5te+nofp -mtune=arm926ej-s+nofp -flto
 
 CFLAGS = $(DEFINES) $(INCLUDES) $(OPT_FLAGS)
-LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto
+LDFLAGS = -Wl,--as-needed -Wl,--gc-sections -flto 
 
 # Redream (main engine)
 OBJS =  \
@@ -31,6 +31,7 @@ all: executable
 
 executable : $(OBJS)
 	$(CC) $(CFLAGS) -o $(OUTPUTNAME) $(OBJS)  $(LDFLAGS)
+	genzehn --input $(OUTPUTNAME) --output roq.tns --compress
 
 clean:
 	rm $(OBJS) $(OUTPUTNAME)
