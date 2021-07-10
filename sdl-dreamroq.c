@@ -6,11 +6,22 @@
 
 #include <stdio.h>
 #include <SDL/SDL.h>
+#include <alsa/asoundlib.h>
+static snd_pcm_t *handle;
 
 #include "dreamroqlib.h"
 
 extern int32_t framerate;
-SDL_Surface* screen;
+SDL_Surface* screen, *backbuffer[2];
+
+uint16_t* frame_contain[2];
+
+#define SOUND_FREQUENCY 22050
+#define SOUND_SAMPLES_SIZE 1024
+
+#ifndef SDL_TRIPLEBUF
+#define SDL_TRIPLEBUF SDL_DOUBLEBUF
+#endif
 
 int32_t quit_cb()
 {
@@ -26,78 +37,29 @@ int32_t quit_cb()
 int32_t render_cb(uint16_t buf[], int32_t width, int32_t height, int32_t stride,
     int32_t texture_height, int32_t colorspace)
 {
-    uint16_t *buf_rgb565 = (uint16_t*)buf;
-    
-	uint32_t start;
-	start = SDL_GetTicks();
-	if((1000/framerate) > SDL_GetTicks()-start) SDL_Delay((1000/framerate)-(SDL_GetTicks()-start));
-
-	/* Memcpy is safer with libSDL, you can't just pass the buffer to screen->pixels */
-	SDL_LockSurface(screen);
-	memcpy(screen->pixels, buf_rgb565, (320*240)*2);
-	SDL_UnlockSurface(screen);
-    SDL_Flip(screen);
-
+    SDL_Flip(backbuffer[1]);
     return ROQ_SUCCESS;
 }
 
 #ifdef AUDIO
-#define AUDIO_FILENAME "roq-audio.wav"
-static char wav_header[] = {
-    'R', 'I', 'F', 'F',  /* RIFF header */
-      0,   0,   0,   0,  /* file size will be filled in later */
-    'W', 'A', 'V', 'E',  /* more header stuff */
-    'f', 'm', 't', 0x20,
-    0x10,  0,   0,   0,  /* length of format chunk */
-      1,   0,            /* format = 1 (PCM) */
-      0,   0,            /* channel count will be filled in later */
-    0x22, 0x56, 0,   0,  /* frequency is always 0x5622 = 22050 Hz */
-      0,   0,   0,   0,  /* byte rate will be filled in later */
-      1,   0, 0x10,  0,  /* data alignment and bits per sample */
-    'd', 'a', 't', 'a',  /* start of data chunk */
-      0,   0,   0,   0   /* data block size will be filled in later */
-};
-#define WAV_HEADER_SIZE 44
-#define SAMPLE_RATE 22050
-static FILE *wav_output;
-static int32_t data_size = 0;
-static int32_t audio_output_initialized = 0;
 
-
-int32_t audio_cb(uint8_t *buf_rgb565, int32_t samples, int32_t channels)
+int32_t audio_cb(uint8_t *snd, int32_t samples, int32_t channels)
 {
-    int32_t byte_rate;
-
-    if (!audio_output_initialized)
-    {
-        wav_output = fopen(AUDIO_FILENAME, "wb");
-        if (!wav_output)
-            return ROQ_CLIENT_PROBLEM;
-
-        if (channels != 1 && channels != 2)
-            return ROQ_CLIENT_PROBLEM;
-        wav_header[22] = channels;
-        byte_rate = SAMPLE_RATE * 2 * channels;
-        wav_header[0x1C] = (byte_rate >>  0) & 0xFF;
-        wav_header[0x1D] = (byte_rate >>  8) & 0xFF;
-        wav_header[0x1E] = (byte_rate >> 16) & 0xFF;
-        wav_header[0x1F] = (byte_rate >> 24) & 0xFF;
-
-        if (fwrite(wav_header, WAV_HEADER_SIZE, 1, wav_output) != 1)
-        {
-            fclose(wav_output);
-            return ROQ_CLIENT_PROBLEM;
-        }
-
-        audio_output_initialized = 1;
-    }
-
-    if (fwrite(buf_rgb565, samples, 1, wav_output) != 1)
-    {
-        fclose(wav_output);
-        return ROQ_CLIENT_PROBLEM;
-    }
-    data_size += samples;
+	uint32_t ret, len;
+	len = samples / 4;
+	ret = snd_pcm_writei(handle, snd, len);
+	while(ret != len) 
+	{
+		if (ret < 0) 
+		{
+			snd_pcm_prepare( handle );
+		}
+		else 
+		{
+			len -= ret;
+		}
+		ret = snd_pcm_writei(handle, snd, len);
+	}
 
     return ROQ_SUCCESS;
 }
@@ -106,26 +68,11 @@ int32_t audio_cb(uint8_t *buf_rgb565, int32_t samples, int32_t channels)
 int finish_cb()
 {
 	#ifdef AUDIO
-	if (audio_output_initialized)
-    {
-        printf("Wrote %d (0x%X) bytes to %s\n", data_size, data_size,
-            AUDIO_FILENAME);
-        fseek(wav_output, 0, SEEK_SET);
-        wav_header[40] = (data_size >>  0) & 0xFF;
-        wav_header[41] = (data_size >>  8) & 0xFF;
-        wav_header[42] = (data_size >> 16) & 0xFF;
-        wav_header[43] = (data_size >> 24) & 0xFF;
-        data_size += WAV_HEADER_SIZE - 8;
-        wav_header[4] = (data_size >>  0) & 0xFF;
-        wav_header[5] = (data_size >>  8) & 0xFF;
-        wav_header[6] = (data_size >> 16) & 0xFF;
-        wav_header[7] = (data_size >> 24) & 0xFF;
-        if (fwrite(wav_header, WAV_HEADER_SIZE, 1, wav_output) != 1)
-        {
-            fclose(wav_output);
-            return ROQ_CLIENT_PROBLEM;
-        }
-    }
+	if (handle)
+	{
+		snd_pcm_drain(handle);
+		snd_pcm_close(handle);
+	}
     #endif
     return ROQ_SUCCESS;
 }
@@ -141,9 +88,67 @@ int main(int argc, char *argv[])
         return 1;
     }
     
+    #ifdef AUDIO
+	snd_pcm_hw_params_t *params;
+	uint32_t val;
+	uint32_t ret;
+	int32_t dir = -1;
+	snd_pcm_uframes_t frames;
+	
+	/* Open PCM device for playback. */
+	int32_t rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+
+	if (rc < 0)
+		rc = snd_pcm_open(&handle, "plughw:0,0,0", SND_PCM_STREAM_PLAYBACK, 0);
+
+	if (rc < 0)
+		rc = snd_pcm_open(&handle, "plughw:0,0", SND_PCM_STREAM_PLAYBACK, 0);
+		
+	if (rc < 0)
+		rc = snd_pcm_open(&handle, "plughw:1,0,0", SND_PCM_STREAM_PLAYBACK, 0);
+
+	if (rc < 0)
+		rc = snd_pcm_open(&handle, "plughw:1,0", SND_PCM_STREAM_PLAYBACK, 0);
+
+	
+	/* Allocate a hardware parameters object. */
+	snd_pcm_hw_params_alloca(&params);
+
+	/* Fill it in with default values. */
+	rc = snd_pcm_hw_params_any(handle, params);
+
+	/* Set the desired hardware parameters. */
+
+	/* Interleaved mode */
+	rc = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+
+	/* Signed 16-bit little-endian format */
+	rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+
+	/* Two channels (stereo) */
+	rc = snd_pcm_hw_params_set_channels(handle, params, 2);
+	
+	val = SOUND_FREQUENCY;
+	rc=snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
+
+	/* Set period size to settings.aica.BufferSize frames. */
+	frames = SOUND_SAMPLES_SIZE;
+	rc = snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
+
+	frames *= 4;
+	rc = snd_pcm_hw_params_set_buffer_size_near(handle, params, &frames);
+
+	/* Write the parameters to the driver */
+	rc = snd_pcm_hw_params(handle, params);
+
+    #endif
+    
 	SDL_Init( SDL_INIT_VIDEO );
 	SDL_ShowCursor(0);
-	screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE);
+	backbuffer[1] = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE);
+	backbuffer[0] = SDL_CreateRGBSurface(SDL_HWSURFACE, 320, 240, 16, 0,0,0,0);
+	frame_contain[0] = backbuffer[0]->pixels;
+	frame_contain[1] = backbuffer[1]->pixels;
 
     cbs.render_cb = render_cb;
     #ifdef AUDIO
@@ -153,7 +158,8 @@ int main(int argc, char *argv[])
     cbs.finish_cb = finish_cb;
 
     status = dreamroq_play(argv[1], ROQ_RGB565, 0, &cbs);
-    if (screen) SDL_FreeSurface(screen);
+    if (backbuffer[1]) SDL_FreeSurface(backbuffer[1]);
+    if (backbuffer[0]) SDL_FreeSurface(backbuffer[0]);
 	SDL_Quit();
 
     return status;

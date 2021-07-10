@@ -1,0 +1,44 @@
+#
+# Makefile for Linux
+# It's mostly for conveniance and also so i don't have to recompile SDL2 each time.
+#
+
+CC = /opt/rs90-toolchain/bin/mipsel-linux-gcc
+CXX= /opt/rs90-toolchain/bin/mipsel-linux-g++
+
+OUTPUTNAME = roq.elf
+
+DEFINES = -DEXECUTE_APP -DAUDIO -DALWAYS_16BIT -DSDL
+PROFILE = APPLY
+INCLUDES = -I.
+
+OPT_FLAGS	   += -Ofast -mips32 -fdata-sections -ffunction-sections -mno-check-zero-division -flto -mplt -mno-shared -fno-PIC
+OPT_FLAGS	   += -mno-fp-exceptions -mno-check-zero-division -mframe-header-opt -fsingle-precision-constant
+OPT_FLAGS	   += -fno-stack-protector -fomit-frame-pointer -freorder-functions -freorder-blocks
+
+ifeq ($(PROFILE), YES)
+OPT_FLAGS 		+= -fprofile-generate="/media/mmcblk0p1/roq_gcda"
+LDFLAGS		+= -lgcov
+else ifeq ($(PROFILE), APPLY)
+OPT_FLAGS		+= -fprofile-use="./"
+endif
+
+CFLAGS = $(DEFINES) $(INCLUDES) $(OPT_FLAGS) -std=gnu11 
+LDFLAGS += -nodefaultlibs -lc -lgcc -lSDL -lasound -Wl,-O1,--sort-common,--as-needed,--gc-sections -s -flto -no-pie -flto -s
+
+# Redream (main engine)
+OBJS =  \
+  sdl-dreamroq.o \
+  dreamroqlib.o
+  
+.c.o:
+	$(CC) $(CFLAGS) -c -o $@ $< 
+	
+	
+all: executable
+
+executable : $(OBJS)
+	$(CC) -o $(OUTPUTNAME) $(OBJS) $(CFLAGS) $(LDFLAGS)
+
+clean:
+	rm $(OBJS) $(OUTPUTNAME)

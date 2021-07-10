@@ -43,7 +43,11 @@ struct roq_audio
 
 int32_t framerate;
 
+#ifdef SDL
+extern uint16_t* frame_contain[2];
+#else
 static uint16_t frame_contain[2][307200];
+#endif
 
 typedef struct
 {
@@ -62,11 +66,12 @@ typedef struct
     uint16_t cb2x2_rgb565[ROQ_CODEBOOK_SIZE][4];
     uint16_t cb4x4_rgb565[ROQ_CODEBOOK_SIZE][16];
 
-	#ifndef ALWAYS_16B8T
+	#ifndef ALWAYS_16BIT
     uint32_t cb2x2_rgba[ROQ_CODEBOOK_SIZE][4];
     uint32_t cb4x4_rgba[ROQ_CODEBOOK_SIZE][16];
     #endif
 } roq_state;
+
 
 static int32_t roq_unpack_quad_codebook_rgb565(uint8_t *buf, int32_t size,
     int32_t arg, roq_state *state)
@@ -152,6 +157,7 @@ static int32_t roq_unpack_quad_codebook_rgb565(uint8_t *buf, int32_t size,
     return ROQ_SUCCESS;
 }
 
+#ifndef ALWAYS_16BIT
 static int32_t roq_unpack_quad_codebook_rgba(uint8_t *buf, int32_t size,
     int32_t arg, roq_state *state)
 {
@@ -239,6 +245,7 @@ static int32_t roq_unpack_quad_codebook_rgba(uint8_t *buf, int32_t size,
 
     return ROQ_SUCCESS;
 }
+#endif
 
 #define GET_BYTE(x) \
     if (index >= size) { \
@@ -298,6 +305,7 @@ static int32_t roq_unpack_vq_rgb565(uint8_t *buf, int32_t size, uint32_t arg,
     mx = (int8_t)(arg >> 8);
     my = (int8_t)arg;
 
+	
     if (state->current_frame & 1)
     {
         this_frame = (uint16_t*)frame_contain[1];
@@ -465,6 +473,7 @@ static int32_t roq_unpack_vq_rgb565(uint8_t *buf, int32_t size, uint32_t arg,
     return status;
 }
 
+#ifndef ALWAYS_16BIT
 static int32_t roq_unpack_vq_rgba(uint8_t *buf, int32_t size, uint32_t arg, 
     roq_state *state)
 {
@@ -667,6 +676,7 @@ static int32_t roq_unpack_vq_rgba(uint8_t *buf, int32_t size, uint32_t arg,
 
     return status;
 }
+#endif
 
 
 int32_t dreamroq_play(char *filename, int32_t colorspace, int32_t loop,
